@@ -1,0 +1,17 @@
+services:
+  nginx:
+    build: ./requirements/nginx
+    image:  nginx:inception
+    pull_policy: build
+    ports:
+      - "443:443"
+    restart: unless-stopped
+    networks:
+      - inception
+    environment:
+      DOMAIN_NAME: ${DOMAIN_NAME:?Set DOMAIN_NAME in .env}
+
+networks:
+  inception:
+    driver: bridge
+   
