@@ -23,8 +23,18 @@ services:
       MYSQL_USER: ${MYSQL_USER:? Set MYSQL_USER in .env}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
-    
+    volumes:
+      - mariadb_data:/var/lib/mysql
+
 networks:
   inception:
     driver: bridge
+
+volumes:
+  mariadb_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: "/home/eeravci/data/mariadb"
    
