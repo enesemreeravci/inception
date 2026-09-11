@@ -11,6 +11,19 @@ services:
     environment:
       DOMAIN_NAME: ${DOMAIN_NAME:?Set DOMAIN_NAME in .env}
 
+  mariadb:
+    build: ./requirements/mariadb
+    image: mariadb:inception
+    pull_policy: build
+    restart: unless-stopped
+    networks:
+      - inception
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:?Set MYSQL_DATABASE in .env}
+      MYSQL_USER: ${MYSQL_USER:? Set MYSQL_USER in .env}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+    
 networks:
   inception:
     driver: bridge
