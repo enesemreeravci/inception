@@ -13,6 +13,7 @@ set -eu
 : "${WORDPRESS_USER:?WORDPRESS_USER must be set}"
 : "${WORDPRESS_USER_PASSWORD:?WORDPRESS_USER_PASSWORD must be set}"
 : "${WORDPRESS_USER_EMAIL:?WORDPRESS_USER_EMAIL must be set}"
+: "${WORDPRESS_DOMAIN:?WORDPRESS_DOMAIN must be set}"
 
 mkdir -p /run/php
 
@@ -24,6 +25,41 @@ if [ ! -f /var/www/html/wp-includes/version.php ]; then
 
 
 	chown -R www-data:www-data /var/www/html
+fi
+
+until mariadb-admin ping -h mariadb --silent; do
+	sleep 2
+done
+
+if [ ! -f /var/www/html/wp-config.php ]; then
+	wp config create \
+		--path=/var/www/html \
+		--dbname="$WORDPRESS_DB_NAME" \
+		--dbuser="$WORDPRESS_DB_USER" \
+		--dbpass="$WORDPRESS_DB_PASSWORD" \
+		--dbhost="$WORDPRESS_DB_HOST" \
+		--skip-check \
+		--allow-root
+fi
+
+if ! wp core is-installed --path=/var/www/html --allow-root; then
+	wp core install \
+		--path=/var/www/html \
+		--url="https://${WORDPRESS_DOMAIN}" \
+		--title="$WORDPRESS_TITLE" \
+		--admin_user="$WORDPRESS_ADMIN_USER" \
+		--admin_password="$WORDPRESS_ADMIN_PASSWORD" \
+		--admin_email="$WORDPRESS_ADMIN_EMAIL" \
+		--skip-email \
+		--allow-root
+
+	wp user create \
+		"$WORDPRESS_USER" \
+		"$WORDPRESS_USER_EMAIL" \
+		--user_pass="$WORDPRESS_USER_PASSWORD" \
+		--role=author \
+		--path=/var/www/html \
+		--allow-root
 fi
 
 exec php-fpm8.2 -F
