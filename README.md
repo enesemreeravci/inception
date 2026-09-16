@@ -348,4 +348,3 @@ It helped with:
 * Reviewing documentation requirements
 
 All commands and configuration were tested and adapted manually in the Debian virtual machine. The final implementation and validation were performed by the project author.
-

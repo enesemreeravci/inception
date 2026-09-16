@@ -652,4 +652,3 @@ These directories are outside the container writable layers and therefore surviv
 * Use `exec` for the final foreground process in startup scripts.
 * Do not use `docker compose down -v` unless data deletion is intentional.
 * Keep `.env` and private credentials out of Git.
-

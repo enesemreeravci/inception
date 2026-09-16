@@ -377,4 +377,3 @@ Start the project again with:
 ```bash
 make up
 ```
-
