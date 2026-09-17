@@ -50,7 +50,17 @@ services:
       WORDPRESS_USER_EMAIL: ${WP_USER_EMAIL:?Set WP_USER_EMAIL in .env}
     volumes:
       - wordpress_data:/var/www/html
-
+  adminer:
+    build: ./requirements/adminer
+    image: adminer:inception
+    pull_policy: build
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+    networks:
+      - inception
+    depends_on:
+      - mariadb
 networks:
   inception:
     driver: bridge

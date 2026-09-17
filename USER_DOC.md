@@ -2,63 +2,38 @@
 
 ## Overview
 
-This project provides a WordPress website running through three Docker services:
+This project provides four Docker services:
 
 * **NGINX**: secure HTTPS web server
 * **WordPress**: website and administration panel
 * **MariaDB**: database server
+* **Adminer**: browser-based database administration interface
 
-The services communicate through a private Docker network. Website files and database files are stored persistently on the host machine.
-
-## Requirements
-
-The following must be installed:
-
-* Docker Engine
-* Docker Compose
-* Git
-* A configured Linux environment or virtual machine
-
-Check Docker:
-
-```bash
-docker --version
-docker compose version
-```
+The services communicate through a private Docker network. Website files and database files are stored persistently on the host.
 
 ## Configuration and Credentials
 
-Configuration is stored in:
+Private configuration is stored in:
 
 ```text
 srcs/.env
 ```
 
-The file contains:
+The file contains the domain, database credentials, and WordPress credentials.
 
-* Domain name
-* MariaDB database name
-* MariaDB user and password
-* MariaDB root password
-* WordPress site title
-* WordPress administrator credentials
-* WordPress regular-user credentials
-
-The `.env` file is private and must not be shared or committed to Git.
-
-A safe template is provided at:
+A safe template is:
 
 ```text
 srcs/.env.example
 ```
 
-If the project has not been configured yet:
+Create the private file if necessary:
 
 ```bash
 cp srcs/.env.example srcs/.env
 ```
 
-Edit the copied file and replace the example values with your own credentials.
+Never commit or share `.env`.
 
 ## Starting the Services
 
@@ -68,8 +43,6 @@ From the project root:
 make up
 ```
 
-This builds the images and starts the containers in the background.
-
 Equivalent command:
 
 ```bash
@@ -77,17 +50,17 @@ docker compose --env-file srcs/.env \
 -f srcs/docker-compose.yml up -d --build
 ```
 
-## Accessing the Website
+## Website Access
 
-Open this address in a browser:
+Open:
 
 ```text
 https://eeravci.42.fr
 ```
 
-The project uses a self-signed certificate, so the browser may show a security warning during development. Accept the certificate exception only when you trust the local environment.
+The certificate is self-signed, so the browser may display a warning during development.
 
-## Accessing the Administration Panel
+## WordPress Administration
 
 Open:
 
@@ -95,142 +68,104 @@ Open:
 https://eeravci.42.fr/wp-admin
 ```
 
-Log in with the administrator username and password defined in `srcs/.env`.
+Use the administrator credentials from `srcs/.env`.
 
-The administrator can:
+## Adminer Database Interface
 
-* Create and edit posts
-* Manage pages
-* Manage media
-* Manage themes and plugins
-* Manage WordPress users
-* Change site settings
+Open:
 
-A regular user is also created during the first WordPress installation. The regular user has the `author` role.
-
-## Stopping the Services
-
-Stop the running containers:
-
-```bash
-make stop
+```text
+http://127.0.0.1:8080
 ```
 
-Remove the containers and Docker network:
+Use:
 
-```bash
-make down
+```text
+System:   MariaDB
+Server:   mariadb
+Database: wordpress
+Username: root or MYSQL_USER
+Password: matching value from srcs/.env
 ```
 
-The persistent data remains available after these commands.
+Use `http://`, not `https://`.
 
-Do not use:
+Adminer can display tables such as:
 
-```bash
-docker compose down -v
+```text
+wp_users
+wp_posts
+wp_options
+wp_usermeta
 ```
 
-unless you intentionally want to remove the project volumes and all stored data.
-
-## Checking Service Status
-
-From the project root:
+## Service Status
 
 ```bash
 docker compose --env-file srcs/.env \
 -f srcs/docker-compose.yml ps
 ```
 
-All three services should show a running status:
+All four services should show `Up`:
 
 ```text
 nginx
 wordpress
 mariadb
+adminer
 ```
 
-## Checking Logs
+## Logs
 
-View logs for all services:
+View all logs:
 
 ```bash
 make logs
 ```
 
-View logs for a specific service:
+View one service:
 
 ```bash
 docker compose --env-file srcs/.env \
--f srcs/docker-compose.yml logs nginx
+-f srcs/docker-compose.yml logs adminer
 ```
 
-Other service names are:
+## Testing
 
-```text
-wordpress
-mariadb
-```
-
-Follow logs continuously:
-
-```bash
-docker compose --env-file srcs/.env \
--f srcs/docker-compose.yml logs -f wordpress
-```
-
-Press `Ctrl+C` to stop following the logs.
-
-## Testing HTTPS
-
-Run:
+Test HTTPS:
 
 ```bash
 curl -k -I --resolve eeravci.42.fr:443:127.0.0.1 \
 https://eeravci.42.fr
 ```
 
-A working installation should return:
+Test Adminer:
 
-```text
-HTTP/1.1 200 OK
+```bash
+curl -I http://127.0.0.1:8080/
 ```
 
-## Testing NGINX
+Test NGINX:
 
 ```bash
 docker compose --env-file srcs/.env \
 -f srcs/docker-compose.yml exec nginx nginx -t
 ```
 
-Expected result:
-
-```text
-syntax is ok
-test is successful
-```
-
-## Testing PHP-FPM
+Test PHP-FPM:
 
 ```bash
 docker compose --env-file srcs/.env \
 -f srcs/docker-compose.yml exec wordpress php-fpm8.2 -t
 ```
 
-Expected result:
-
-```text
-configuration file ... test is successful
-```
-
-## Testing MariaDB
+Test MariaDB:
 
 ```bash
 docker compose --env-file srcs/.env \
 -f srcs/docker-compose.yml exec mariadb \
 mariadb-admin ping -uroot -p
 ```
-
-Enter the MariaDB root password when prompted.
 
 Expected result:
 
@@ -238,142 +173,68 @@ Expected result:
 mysqld is alive
 ```
 
-## Checking WordPress Installation
+## Stopping the Services
+
+Stop containers:
 
 ```bash
-docker compose --env-file srcs/.env \
--f srcs/docker-compose.yml exec wordpress \
-wp core is-installed --path=/var/www/html --allow-root
+make stop
 ```
 
-No output means WordPress is installed successfully.
-
-## Viewing WordPress Users
-
-Using WP-CLI:
+Remove containers and the network while preserving data:
 
 ```bash
-docker compose --env-file srcs/.env \
--f srcs/docker-compose.yml exec wordpress \
-wp user list --path=/var/www/html --allow-root
+make down
 ```
 
-Using MariaDB:
-
-```bash
-docker compose --env-file srcs/.env \
--f srcs/docker-compose.yml exec mariadb \
-mariadb -uroot -p
-```
-
-Then run:
-
-```sql
-USE wordpress;
-
-SELECT ID, user_login, user_email, user_registered
-FROM wp_users;
-```
-
-Exit with:
-
-```sql
-EXIT;
-```
-
-Never share passwords or password hashes publicly.
+Do not use `docker compose down -v` unless you intend to delete all volumes.
 
 ## Persistent Data
 
-MariaDB data is stored at:
+MariaDB:
 
 ```text
 /home/eeravci/data/mariadb
 ```
 
-WordPress files are stored at:
+WordPress:
 
 ```text
 /home/eeravci/data/wordpress
 ```
 
-These locations preserve the website and database data when containers are removed or recreated.
-
-To verify persistence:
+Verify persistence:
 
 ```bash
 make down
 make up
 ```
 
-Then open the website and confirm that existing users and posts are still present.
+Existing users and posts should remain available.
 
-## Basic Troubleshooting
+## Troubleshooting
 
-### The website does not open
-
-Check the services:
+Check service status:
 
 ```bash
 docker compose --env-file srcs/.env \
 -f srcs/docker-compose.yml ps
 ```
 
-Check NGINX logs:
+Check Adminer logs:
 
 ```bash
 docker compose --env-file srcs/.env \
--f srcs/docker-compose.yml logs nginx
+-f srcs/docker-compose.yml logs adminer
 ```
 
-### WordPress keeps restarting
+If Adminer reports an SSL error, use:
 
-Check WordPress logs:
-
-```bash
-docker compose --env-file srcs/.env \
--f srcs/docker-compose.yml logs wordpress
+```text
+http://127.0.0.1:8080
 ```
 
-Verify that all WordPress and database variables exist in `srcs/.env`.
+not HTTPS.
 
-### MariaDB is unavailable
+If Adminer cannot connect to MariaDB, use `mariadb` as the server name, not `localhost`.
 
-Check MariaDB logs:
-
-```bash
-docker compose --env-file srcs/.env \
--f srcs/docker-compose.yml logs mariadb
-```
-
-Then test:
-
-```bash
-docker compose --env-file srcs/.env \
--f srcs/docker-compose.yml exec mariadb \
-mariadb-admin ping -uroot -p
-```
-
-### The browser displays an old or unstyled page
-
-Perform a hard refresh in the browser. Then check that NGINX includes the MIME types file and that the WordPress volume contains the expected files.
-
-## Safe Shutdown
-
-For normal daily use:
-
-```bash
-make stop
-```
-
-For removing containers while keeping data:
-
-```bash
-make down
-```
-
-Start the project again with:
-
-```bash
-make up
-```

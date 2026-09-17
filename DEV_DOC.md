@@ -1,34 +1,26 @@
 # Inception Developer Documentation
 
-## Project Overview
+## Architecture
 
-Inception is a Docker-based WordPress infrastructure composed of three independent services:
-
-```text
-NGINX → WordPress/PHP-FPM → MariaDB
-```
-
-The services run in separate containers and communicate through the Docker network named `inception`.
-
-Only NGINX is exposed to the host:
+The project contains four containers:
 
 ```text
-Host port 443 → NGINX container port 443
+Browser
+   │
+   ├── HTTPS :443 ──> NGINX
+   └── HTTP :8080 ──> Adminer
+                         │
+                         └── MariaDB :3306
+
+NGINX ──> WordPress/PHP-FPM :9000
+WordPress ──> MariaDB :3306
 ```
 
-WordPress and MariaDB are accessible only inside the Docker network.
+All services use the private Docker bridge network `inception`.
 
 ## Prerequisites
 
-Install the following:
-
-* Docker Engine
-* Docker Compose plugin
-* Git
-* Linux, or a Linux virtual machine
-* Internet access during the first image build and WordPress download
-
-Verify the installation:
+Install:
 
 ```bash
 docker --version
@@ -36,109 +28,55 @@ docker compose version
 git --version
 ```
 
-The Docker user must be allowed to access the Docker daemon:
+The Docker user must have Docker permissions:
 
 ```bash
 id -nG
 ```
 
-The output should include:
+The output should include `docker`.
 
-```text
-docker
-```
+## Environment Setup
 
-## Repository Structure
-
-```text
-.
-├── Makefile
-├── README.md
-├── USER_DOC.md
-├── DEV_DOC.md
-└── srcs
-    ├── .env
-    ├── .env.example
-    ├── docker-compose.yml
-    └── requirements
-        ├── nginx
-        │   ├── Dockerfile
-        │   ├── conf
-        │   │   └── nginx.conf
-        │   └── tools
-        │       └── start-nginx.sh
-        ├── mariadb
-        │   ├── Dockerfile
-        │   ├── conf
-        │   │   └── 50-server.cnf
-        │   └── tools
-        │       └── start-mariadb.sh
-        └── wordpress
-            ├── Dockerfile
-            └── tools
-                └── start-wordpress.sh
-```
-
-## Environment Configuration
-
-The Compose file reads configuration values from `srcs/.env`.
-
-Create it from the template:
+Create the private environment file:
 
 ```bash
-cd ~/inception
 cp srcs/.env.example srcs/.env
 ```
 
-Edit the file:
+Edit it:
 
 ```bash
 vim srcs/.env
 ```
 
-Required variables include:
+The file must contain the domain, database credentials, and WordPress credentials.
 
-```dotenv
-DOMAIN_NAME=yourlogin.42.fr
-MYSQL_DATABASE=wordpress
-MYSQL_USER=wp_user
-MYSQL_PASSWORD=your-database-password
-MYSQL_ROOT_PASSWORD=your-root-password
-WP_TITLE=Inception
-WP_ADMIN_USER=siteowner
-WP_ADMIN_PASSWORD=your-admin-password
-WP_ADMIN_EMAIL=your-email@example.com
-WP_USER=author
-WP_USER_PASSWORD=your-user-password
-WP_USER_EMAIL=author@example.com
-```
-
-The `.env` file must remain local and must not be committed.
-
-Check that it is ignored:
-
-```bash
-git check-ignore srcs/.env
-```
-
-The expected output is:
-
-```text
-srcs/.env
-```
-
-## Docker Compose Configuration
-
-Validate the Compose file:
+Verify Compose syntax:
 
 ```bash
 docker compose --env-file srcs/.env \
 -f srcs/docker-compose.yml config -q
 ```
 
-No output means the configuration is valid.
+No output means valid configuration.
 
-List the services:
+## Build and Start
+
+Start the full project:
+
+```bash
+make up
+```
+
+Equivalent command:
+
+```bash
+docker compose --env-file srcs/.env \
+-f srcs/docker-compose.yml up -d --build
+```
+
+List services:
 
 ```bash
 docker compose --env-file srcs/.env \
@@ -151,284 +89,77 @@ Expected services:
 nginx
 mariadb
 wordpress
+adminer
 ```
 
-List the images:
+## Service Management
 
-```bash
-docker compose --env-file srcs/.env \
--f srcs/docker-compose.yml config --images
-```
-
-## Makefile Commands
-
-The Makefile defines the main project operations:
-
-```bash
-make up
-```
-
-Build images and start all services:
-
-```bash
-make up
-```
-
-Stop containers while preserving volumes:
-
-```bash
-make stop
-```
-
-Remove containers and the project network while preserving volumes:
-
-```bash
-make down
-```
-
-Follow logs:
-
-```bash
-make logs
-```
-
-The equivalent Compose command is:
-
-```bash
-docker compose --env-file srcs/.env \
--f srcs/docker-compose.yml logs -f
-```
-
-## Building and Launching
-
-Build and start the complete infrastructure:
-
-```bash
-make up
-```
-
-Or directly:
-
-```bash
-docker compose --env-file srcs/.env \
--f srcs/docker-compose.yml up -d --build
-```
-
-Check running containers:
+Check status:
 
 ```bash
 docker compose --env-file srcs/.env \
 -f srcs/docker-compose.yml ps
 ```
 
-Expected services:
-
-```text
-srcs-nginx-1
-srcs-wordpress-1
-srcs-mariadb-1
-```
-
-## Managing Individual Services
-
-Rebuild only one service:
+Rebuild one service:
 
 ```bash
 docker compose --env-file srcs/.env \
--f srcs/docker-compose.yml build wordpress
+-f srcs/docker-compose.yml build adminer
 ```
 
 Restart one service:
 
 ```bash
 docker compose --env-file srcs/.env \
--f srcs/docker-compose.yml restart wordpress
+-f srcs/docker-compose.yml restart adminer
 ```
 
-Stop one service:
+View logs:
 
 ```bash
 docker compose --env-file srcs/.env \
--f srcs/docker-compose.yml stop nginx
+-f srcs/docker-compose.yml logs -f adminer
 ```
 
-Open a shell inside a running container:
+Open a shell:
 
 ```bash
 docker compose --env-file srcs/.env \
--f srcs/docker-compose.yml exec wordpress sh
+-f srcs/docker-compose.yml exec adminer sh
 ```
 
-Exit the shell:
+## Adminer Service
 
-```bash
-exit
-```
-
-## Service Details
-
-### NGINX
-
-NGINX is built from:
+Adminer is defined in:
 
 ```text
-srcs/requirements/nginx/Dockerfile
+srcs/requirements/adminer/Dockerfile
 ```
 
-Configuration:
+It runs PHP’s built-in web server on port `8080`.
+
+The Compose mapping is:
 
 ```text
-srcs/requirements/nginx/conf/nginx.conf
+127.0.0.1:8080:8080
 ```
 
-Startup script:
+This makes Adminer available only from the local VM.
+
+Inside the Docker network, Adminer connects to MariaDB using:
 
 ```text
-srcs/requirements/nginx/tools/start-nginx.sh
+mariadb:3306
 ```
 
-The startup script:
-
-1. Validates `DOMAIN_NAME`.
-2. Creates a self-signed TLS certificate if necessary.
-3. Substitutes `${DOMAIN_NAME}` into the NGINX configuration.
-4. Tests the configuration.
-5. Starts NGINX in the foreground.
-
-Test the configuration:
-
-```bash
-docker compose --env-file srcs/.env \
--f srcs/docker-compose.yml exec nginx nginx -t
-```
-
-### MariaDB
-
-MariaDB is built from:
+Adminer must use HTTP:
 
 ```text
-srcs/requirements/mariadb/Dockerfile
+http://127.0.0.1:8080
 ```
 
-Configuration:
-
-```text
-srcs/requirements/mariadb/conf/50-server.cnf
-```
-
-Startup script:
-
-```text
-srcs/requirements/mariadb/tools/start-mariadb.sh
-```
-
-During first startup, the script:
-
-1. Validates the database environment variables.
-2. Creates the required runtime directories.
-3. Initializes the MariaDB system tables.
-4. Starts a temporary local server.
-5. Creates the configured database and user.
-6. Grants database privileges.
-7. Stops the temporary server.
-8. Starts MariaDB normally in the foreground.
-
-Test MariaDB:
-
-```bash
-docker compose --env-file srcs/.env \
--f srcs/docker-compose.yml exec mariadb \
-mariadb-admin ping -uroot -p
-```
-
-Inspect databases:
-
-```bash
-docker compose --env-file srcs/.env \
--f srcs/docker-compose.yml exec mariadb \
-mariadb -uroot -p
-```
-
-Then:
-
-```sql
-SHOW DATABASES;
-USE wordpress;
-SHOW TABLES;
-EXIT;
-```
-
-### WordPress
-
-WordPress is built from:
-
-```text
-srcs/requirements/wordpress/Dockerfile
-```
-
-Startup script:
-
-```text
-srcs/requirements/wordpress/tools/start-wordpress.sh
-```
-
-The container installs:
-
-* PHP-FPM
-* PHP MySQL extension
-* PHP CLI
-* Required WordPress PHP extensions
-* MariaDB client
-* WP-CLI
-
-During first startup, the script:
-
-1. Validates all required environment variables.
-2. Downloads WordPress if the files are missing.
-3. Waits for MariaDB to become available.
-4. Generates `wp-config.php`.
-5. Installs WordPress.
-6. Creates the configured regular user.
-7. Starts PHP-FPM in the foreground.
-
-Test PHP-FPM:
-
-```bash
-docker compose --env-file srcs/.env \
--f srcs/docker-compose.yml exec wordpress php-fpm8.2 -t
-```
-
-Test WordPress:
-
-```bash
-docker compose --env-file srcs/.env \
--f srcs/docker-compose.yml exec wordpress \
-wp core is-installed --path=/var/www/html --allow-root
-```
-
-List WordPress users:
-
-```bash
-docker compose --env-file srcs/.env \
--f srcs/docker-compose.yml exec wordpress \
-wp user list --path=/var/www/html --allow-root
-```
-
-## Volumes and Persistent Storage
-
-The Compose file defines two named volumes:
-
-```text
-srcs_mariadb_data
-srcs_wordpress_data
-```
-
-They are backed by these host directories:
-
-```text
-/home/eeravci/data/mariadb
-/home/eeravci/data/wordpress
-```
+## Volumes
 
 List volumes:
 
@@ -436,35 +167,36 @@ List volumes:
 docker volume ls
 ```
 
-Inspect a volume:
+Inspect MariaDB volume:
 
 ```bash
 docker volume inspect srcs_mariadb_data
 ```
 
-Inspect container mounts:
+Inspect WordPress volume:
 
 ```bash
-docker inspect srcs-mariadb-1 \
---format '{{json .Mounts}}'
+docker volume inspect srcs_wordpress_data
 ```
 
-The data remains when containers are removed:
-
-```bash
-make down
-make up
-```
-
-Do not use `down -v` during normal development because it deletes the volumes.
-
-## Network Management
-
-The services use the Compose-created bridge network:
+Host data locations:
 
 ```text
-srcs_inception
+/home/eeravci/data/mariadb
+/home/eeravci/data/wordpress
 ```
+
+Removing containers does not remove these directories.
+
+Avoid:
+
+```bash
+docker compose down -v
+```
+
+unless deleting all project data is intentional.
+
+## Network
 
 List networks:
 
@@ -478,52 +210,19 @@ Inspect the project network:
 docker network inspect srcs_inception
 ```
 
-Containers resolve one another by service name:
+Service names resolve through Docker DNS:
 
 ```text
-mariadb:3306
-wordpress:9000
+mariadb
+wordpress
+adminer
 ```
 
-No host networking or legacy Docker links are used.
+No host networking or legacy links are used.
 
-## Validation and Testing
+## Validation
 
-Check all services:
-
-```bash
-docker compose --env-file srcs/.env \
--f srcs/docker-compose.yml ps
-```
-
-Test HTTPS:
-
-```bash
-curl -k -I --resolve yourlogin.42.fr:443:127.0.0.1 \
-https://yourlogin.42.fr
-```
-
-Expected result:
-
-```text
-HTTP/1.1 200 OK
-```
-
-Test a static WordPress file:
-
-```bash
-curl -k -I --resolve yourlogin.42.fr:443:127.0.0.1 \
-https://yourlogin.42.fr/wp-includes/css/dashicons.min.css
-```
-
-Expected result:
-
-```text
-HTTP/1.1 200 OK
-Content-Type: text/css
-```
-
-Check shell-script syntax:
+Check shell scripts:
 
 ```bash
 for file in srcs/requirements/*/tools/*.sh; do
@@ -532,60 +231,46 @@ for file in srcs/requirements/*/tools/*.sh; do
 done
 ```
 
-## Logs and Troubleshooting
-
-View all logs:
+Test NGINX:
 
 ```bash
 docker compose --env-file srcs/.env \
--f srcs/docker-compose.yml logs
+-f srcs/docker-compose.yml exec nginx nginx -t
 ```
 
-View one service:
+Test PHP-FPM:
 
 ```bash
 docker compose --env-file srcs/.env \
--f srcs/docker-compose.yml logs wordpress
+-f srcs/docker-compose.yml exec wordpress php-fpm8.2 -t
 ```
 
-Follow logs:
+Test MariaDB:
 
 ```bash
 docker compose --env-file srcs/.env \
--f srcs/docker-compose.yml logs -f mariadb
+-f srcs/docker-compose.yml exec mariadb \
+mariadb-admin ping -uroot -p
 ```
 
-Check container exit status:
+Test Adminer:
 
 ```bash
-docker ps -a
+curl -I http://127.0.0.1:8080/
 ```
 
-If a service repeatedly restarts, inspect its logs and verify:
+Expected result:
 
-* Required `.env` variables exist
-* Volume directories exist
-* File permissions are correct
-* Dependent services are running
-* Configuration syntax is valid
+```text
+HTTP/1.1 200 OK
+```
 
-## Clean Rebuild
-
-To rebuild images while preserving data:
+Test HTTPS:
 
 ```bash
-make down
-docker image ls
-make up
+curl -k -I --resolve eeravci.42.fr:443:127.0.0.1 \
+https://eeravci.42.fr
 ```
-
-To remove unused Docker resources, inspect first:
-
-```bash
-docker system df
-```
-
-Avoid deleting volumes unless you intentionally want to erase the WordPress and MariaDB data.
 
 ## Git Workflow
 
@@ -595,60 +280,43 @@ Check changes:
 git status
 ```
 
-Review a diff:
+Review changes:
 
 ```bash
 git diff
 ```
 
-Stage project files:
+Check formatting:
 
 ```bash
-git add README.md USER_DOC.md DEV_DOC.md
+git diff --check
+```
+
+Stage the bonus changes:
+
+```bash
+git add README.md USER_DOC.md DEV_DOC.md \
+srcs/docker-compose.yml \
+srcs/requirements/adminer/Dockerfile
 ```
 
 Commit:
 
 ```bash
-git commit -m "Add project documentation"
+git commit -m "Add Adminer database administration service"
 ```
 
-Push to GitHub:
+Push:
 
 ```bash
-git push
+git push origin main
 ```
 
-Never stage the private `.env` file:
+Verify:
 
 ```bash
-git status --short
+git status
 ```
 
-## Development Data Locations
+The `.env` file must never be staged.
 
-WordPress application files:
-
-```text
-/home/eeravci/data/wordpress
-```
-
-MariaDB database files:
-
-```text
-/home/eeravci/data/mariadb
-```
-
-These directories are outside the container writable layers and therefore survive container recreation.
-
-## Important Development Rules
-
-* Do not use the `latest` tag for project images.
-* Do not store passwords in Dockerfiles or committed configuration files.
-* Do not publish MariaDB port `3306` to the host.
-* Do not publish WordPress PHP-FPM port `9000` to the host.
-* Keep NGINX as the public entry point.
-* Keep services on the private Docker bridge network.
-* Use `exec` for the final foreground process in startup scripts.
-* Do not use `docker compose down -v` unless data deletion is intentional.
-* Keep `.env` and private credentials out of Git.
