@@ -62,4 +62,46 @@ if ! wp core is-installed --path=/var/www/html --allow-root; then
 		--allow-root
 fi
 
+if ! wp plugin is-installed redis-cache \
+	--path=/var/www/html \
+	--allow-root
+then
+	wp plugin install redis-cache \
+		--activate \
+		--path=/var/www/html \
+		--allow-root
+elif ! wp plugin is-active redis-cache \
+	--path=/var/www/html \
+	--allow-root
+then
+	wp plugin activate redis-cache \
+		--path=/var/www/html \
+		--allow-root
+fi
+
+if ! wp config get WP_REDIS_HOST \
+	--path=/var/www/html \
+	--allow-root >/dev/null 2>&1
+then
+	wp config set WP_REDIS_HOST redis \
+		--type=constant \
+		--path=/var/www/html \
+		--allow-root
+fi
+
+if ! wp config get WP_REDIS_PORT \
+	--path=/var/www/html \
+	--allow-root >/dev/null 2>&1
+then
+	wp config set WP_REDIS_PORT 6379 \
+		--raw \
+		--type=constant \
+		--path=/var/www/html \
+		--allow-root
+fi
+
+wp redis enable \
+	--path=/var/www/html \
+	--allow-root
+
 exec php-fpm8.2 -F

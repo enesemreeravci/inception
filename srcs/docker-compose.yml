@@ -33,6 +33,9 @@ services:
     image: wordpress:inception
     pull_policy: build
     restart: unless-stopped
+    depends_on:
+      - mariadb
+      - redis
     networks:
       - inception
     environment:
@@ -50,6 +53,7 @@ services:
       WORDPRESS_USER_EMAIL: ${WP_USER_EMAIL:?Set WP_USER_EMAIL in .env}
     volumes:
       - wordpress_data:/var/www/html
+
   adminer:
     build: ./requirements/adminer
     image: adminer:inception
@@ -61,6 +65,15 @@ services:
       - inception
     depends_on:
       - mariadb
+
+  redis:
+    build: ./requirements/redis
+    image: redis:inception
+    pull_policy: build
+    restart: unless-stopped
+    networks:
+      - inception
+
 networks:
   inception:
     driver: bridge

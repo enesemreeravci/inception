@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project provides four Docker services:
+This project provides a WordPress website running through four Docker services:
 
 * **NGINX**: secure HTTPS web server
 * **WordPress**: website and administration panel
