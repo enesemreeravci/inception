@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enes Emre Eravcı | Docker Portfolio</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            color: #e5e7eb;
+            background: #0f172a;
+        }
+
+        .hero {
+            padding: 90px 20px;
+            text-align: center;
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+        }
+
+        .hero h1 {
+            margin: 0;
+            font-size: 48px;
+        }
+
+        .hero p {
+            margin-top: 15px;
+            font-size: 20px;
+            color: #dbeafe;
+        }
+
+        .container {
+            width: min(1000px, 90%);
+            margin: 40px auto;
+        }
+
+        .intro {
+            text-align: center;
+            color: #cbd5e1;
+            font-size: 18px;
+            line-height: 1.6;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-top: 35px;
+        }
+
+        .card {
+            padding: 25px;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 14px;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: #60a5fa;
+        }
+
+        .card h2 {
+            margin-top: 0;
+            color: #93c5fd;
+        }
+
+        .card p,
+        .card li {
+            color: #cbd5e1;
+            line-height: 1.6;
+        }
+
+        footer {
+            margin-top: 60px;
+            padding: 25px;
+            text-align: center;
+            color: #94a3b8;
+            border-top: 1px solid #334155;
+        }
+
+        a {
+            color: #93c5fd;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="hero">
+        <h1>Enes Emre Eravcı</h1>
+        <p>C++ Developer in Progress · Linux Learner · Docker Enthusiast</p>
+    </header>
+
+    <main class="container">
+        <p class="intro">
+            Welcome to my static showcase website. This page is served by a
+            dedicated NGINX container and connected to my Inception project.
+        </p>
+
+        <section class="cards">
+            <article class="card">
+                <h2>Skills</h2>
+                <ul>
+                    <li>C++ and OOP</li>
+                    <li>Linux administration</li>
+                    <li>Docker and Docker Compose</li>
+                    <li>Git and GitHub</li>
+                </ul>
+            </article>
+
+            <article class="card">
+                <h2>Inception Stack</h2>
+                <ul>
+                    <li>NGINX with HTTPS</li>
+                    <li>WordPress and PHP-FPM</li>
+                    <li>MariaDB</li>
+                    <li>Redis object cache</li>
+                </ul>
+            </article>
+
+            <article class="card">
+                <h2>Bonus Services</h2>
+                <ul>
+                    <li>Adminer database interface</li>
+                    <li>FTP access to WordPress files</li>
+                    <li>Static website container</li>
+                </ul>
+            </article>
+        </section>
+    </main>
+
+    <footer>
+        Built with HTML and CSS · Docker Inception Project
+    </footer>
+</body>
+</html>

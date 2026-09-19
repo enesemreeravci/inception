@@ -73,6 +73,33 @@ services:
     restart: unless-stopped
     networks:
       - inception
+  
+  ftp:
+    build: ./requirements/ftp
+    image: ftp:inception
+    pull_policy: build
+    restart: unless-stopped
+    depends_on:
+      - wordpress
+    networks:
+      - inception
+    environment:
+      FTP_USER: ${FTP_USER:?Set FTP_USER in .env}
+      FTP_PASSWORD: ${FTP_PASSWORD:?Set FTP_PASSWORD in .env}
+      FTP_PASV_ADDRESS: ${FTP_PASV_ADDRESS:?Set FTP_PASV_ADDRESS in .env}
+    ports:
+      - "127.0.0.1:21:21"
+      - "127.0.0.1:21100-21110:21100-21110"
+    volumes:
+      - wordpress_data:/var/www/html
+  
+  static-site:
+    build: ./requirements/static-site
+    image: static-site:inception
+    pull_policy: build
+    restart: unless-stopped
+    networks:
+      - inception
 
 networks:
   inception:
