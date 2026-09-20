@@ -101,6 +101,22 @@ services:
     networks:
       - inception
 
+  monitor:
+    build: ./requirements/monitor
+    image: monitor:inception
+    pull_policy: build
+    restart: unless-stopped
+    depends_on:
+      - mariadb
+      - redis
+      - wordpress
+      - adminer
+      - ftp
+      - static-site
+      - nginx
+    networks:
+      - inception
+
 networks:
   inception:
     driver: bridge
