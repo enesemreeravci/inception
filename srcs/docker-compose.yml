@@ -127,12 +127,11 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: "/home/eeravci/data/wordpress"
-
+      device: "${DATA_ROOT}/wordpress"
+  
   mariadb_data:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: "/home/eeravci/data/mariadb"
-   
+      device: "${DATA_ROOT}/mariadb"
