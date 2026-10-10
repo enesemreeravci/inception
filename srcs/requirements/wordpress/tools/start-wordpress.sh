@@ -1,6 +1,4 @@
-
 #!/bin/sh
-
 set -eu
 
 # Validate required environment variables

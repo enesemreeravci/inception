@@ -1,6 +1,4 @@
-
 #!/bin/sh
-
 set -eu
 
 : "${FTP_USER:?FTP_USER must be set}"
