@@ -23,8 +23,9 @@ services:
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE:?Set MYSQL_DATABASE in .env}
       MYSQL_USER: ${MYSQL_USER:? Set MYSQL_USER in .env}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+    secrets:
+      - db_password
+      - db_root_pasword
     volumes:
       - mariadb_data:/var/lib/mysql
 
@@ -135,3 +136,10 @@ volumes:
       type: none
       o: bind
       device: ${DATA_ROOT}/mariadb
+
+secrets:
+  db_password:
+    file: ../secrets/db_password.txt
+
+  db_root_password:
+    file: ../secrets/db_root_password.txt

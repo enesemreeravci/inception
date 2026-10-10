@@ -4,8 +4,12 @@ set -eu
 
 : "${MYSQL_DATABASE:?MYSQL_DATABASE must be set}"
 : "${MYSQL_USER:?MYSQL_USER must be set}"
-: "${MYSQL_PASSWORD:?MYSQL_PASSWORD must be set}"
-: "${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD must be set}"
+
+MYSQL_PASSWORD="$(cat /run/secrets/db_password)"
+MYSQL_ROOT_PASSWORD="$(cat /run/secrets/db_root_password)"
+
+[ -n "$MYSQL_PASSWORD" ] || exit 1
+[ -n "$MYSQL_ROOT_PASSWORD" ] || exit 1
 
 mkdir -p /var/lib/mysql /run/mysqld
 chown mysql:mysql /var/lib/mysql /run/mysqld
