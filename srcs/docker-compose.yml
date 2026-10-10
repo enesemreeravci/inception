@@ -1,7 +1,8 @@
+
 services:
   nginx:
     build: ./requirements/nginx
-    image:  nginx:inception
+    image: nginx:inception
     pull_policy: build
     ports:
       - "443:443"
@@ -22,10 +23,10 @@ services:
       - inception
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE:?Set MYSQL_DATABASE in .env}
-      MYSQL_USER: ${MYSQL_USER:? Set MYSQL_USER in .env}
+      MYSQL_USER: ${MYSQL_USER:?Set MYSQL_USER in .env}
     secrets:
       - db_password
-      - db_root_pasword
+      - db_root_password
     volumes:
       - mariadb_data:/var/lib/mysql
 
@@ -43,15 +44,16 @@ services:
       WORDPRESS_DB_HOST: mariadb:3306
       WORDPRESS_DB_NAME: ${MYSQL_DATABASE:?Set MYSQL_DATABASE in .env}
       WORDPRESS_DB_USER: ${MYSQL_USER:?Set MYSQL_USER in .env}
-      WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
       WORDPRESS_DOMAIN: ${DOMAIN_NAME:?Set DOMAIN_NAME in .env}
       WORDPRESS_TITLE: ${WP_TITLE:?Set WP_TITLE in .env}
       WORDPRESS_ADMIN_USER: ${WP_ADMIN_USER:?Set WP_ADMIN_USER in .env}
-      WORDPRESS_ADMIN_PASSWORD: ${WP_ADMIN_PASSWORD:?Set WP_ADMIN_PASSWORD in .env}
       WORDPRESS_ADMIN_EMAIL: ${WP_ADMIN_EMAIL:?Set WP_ADMIN_EMAIL in .env}
       WORDPRESS_USER: ${WP_USER:?Set WP_USER in .env}
-      WORDPRESS_USER_PASSWORD: ${WP_USER_PASSWORD:?Set WP_USER_PASSWORD in .env}
       WORDPRESS_USER_EMAIL: ${WP_USER_EMAIL:?Set WP_USER_EMAIL in .env}
+    secrets:
+      - db_password
+      - wp_admin_password
+      - wp_user_password
     volumes:
       - wordpress_data:/var/www/html
 
@@ -74,7 +76,7 @@ services:
     restart: unless-stopped
     networks:
       - inception
-  
+
   ftp:
     build: ./requirements/ftp
     image: ftp:inception
@@ -86,14 +88,15 @@ services:
       - inception
     environment:
       FTP_USER: ${FTP_USER:?Set FTP_USER in .env}
-      FTP_PASSWORD: ${FTP_PASSWORD:?Set FTP_PASSWORD in .env}
       FTP_PASV_ADDRESS: ${FTP_PASV_ADDRESS:?Set FTP_PASV_ADDRESS in .env}
+    secrets:
+      - ftp_password
     ports:
       - "127.0.0.1:21:21"
       - "127.0.0.1:21100-21110:21100-21110"
     volumes:
       - wordpress_data:/var/www/html
-  
+
   static-site:
     build: ./requirements/static-site
     image: static-site:inception
@@ -128,14 +131,14 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: ${DATA_ROOT}/wordpress
-  
+      device: ${DATA_ROOT:?Set DATA_ROOT in .env}/wordpress
+
   mariadb_data:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ${DATA_ROOT}/mariadb
+      device: ${DATA_ROOT:?Set DATA_ROOT in .env}/mariadb
 
 secrets:
   db_password:
@@ -143,3 +146,12 @@ secrets:
 
   db_root_password:
     file: ../secrets/db_root_password.txt
+
+  wp_admin_password:
+    file: ../secrets/wp_admin_password.txt
+
+  wp_user_password:
+    file: ../secrets/wp_user_password.txt
+
+  ftp_password:
+    file: ../secrets/ftp_password.txt
