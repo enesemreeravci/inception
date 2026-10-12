@@ -1,26 +1,30 @@
 
 services:
+  # ==================== NGINX ====================
   nginx:
     build: ./requirements/nginx
     image: nginx:inception
     pull_policy: build
+    restart: unless-stopped
+    depends_on:
+      - wordpress
+      - static-site
+      - monitor
     ports:
       - "443:443"
-    restart: unless-stopped
-    networks:
-      - inception
     environment:
       DOMAIN_NAME: ${DOMAIN_NAME:?Set DOMAIN_NAME in .env}
     volumes:
-      - wordpress_data:/var/www/html
+      - wordpress_data:/var/www/html:ro
+    networks:
+      - inception
 
+  # ==================== MARIADB ====================
   mariadb:
     build: ./requirements/mariadb
     image: mariadb:inception
     pull_policy: build
     restart: unless-stopped
-    networks:
-      - inception
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE:?Set MYSQL_DATABASE in .env}
       MYSQL_USER: ${MYSQL_USER:?Set MYSQL_USER in .env}
@@ -29,7 +33,10 @@ services:
       - db_root_password
     volumes:
       - mariadb_data:/var/lib/mysql
+    networks:
+      - inception
 
+  # ==================== WORDPRESS ====================
   wordpress:
     build: ./requirements/wordpress
     image: wordpress:inception
@@ -38,8 +45,6 @@ services:
     depends_on:
       - mariadb
       - redis
-    networks:
-      - inception
     environment:
       WORDPRESS_DB_HOST: mariadb:3306
       WORDPRESS_DB_NAME: ${MYSQL_DATABASE:?Set MYSQL_DATABASE in .env}
@@ -56,36 +61,26 @@ services:
       - wp_user_password
     volumes:
       - wordpress_data:/var/www/html
-
-  adminer:
-    build: ./requirements/adminer
-    image: adminer:inception
-    pull_policy: build
-    restart: unless-stopped
-    ports:
-      - "127.0.0.1:8080:8080"
     networks:
       - inception
-    depends_on:
-      - mariadb
 
+  # ==================== REDIS ====================
   redis:
-    build: ./requirements/redis
+    build: ./requirements/bonus/redis
     image: redis:inception
     pull_policy: build
     restart: unless-stopped
     networks:
       - inception
 
+  # ==================== FTP ====================
   ftp:
-    build: ./requirements/ftp
+    build: ./requirements/bonus/ftp
     image: ftp:inception
     pull_policy: build
     restart: unless-stopped
     depends_on:
       - wordpress
-    networks:
-      - inception
     environment:
       FTP_USER: ${FTP_USER:?Set FTP_USER in .env}
       FTP_PASV_ADDRESS: ${FTP_PASV_ADDRESS:?Set FTP_PASV_ADDRESS in .env}
@@ -96,35 +91,46 @@ services:
       - "127.0.0.1:21100-21110:21100-21110"
     volumes:
       - wordpress_data:/var/www/html
+    networks:
+      - inception
 
+  # ==================== ADMINER ====================
+  adminer:
+    build: ./requirements/bonus/adminer
+    image: adminer:inception
+    pull_policy: build
+    restart: unless-stopped
+    depends_on:
+      - mariadb
+    ports:
+      - "127.0.0.1:8080:8080"
+    networks:
+      - inception
+
+  # ==================== STATIC WEBSITE ====================
   static-site:
-    build: ./requirements/static-site
+    build: ./requirements/bonus/static-site
     image: static-site:inception
     pull_policy: build
     restart: unless-stopped
     networks:
       - inception
 
+  # ==================== MONITOR ====================
   monitor:
-    build: ./requirements/monitor
+    build: ./requirements/bonus/monitor
     image: monitor:inception
     pull_policy: build
     restart: unless-stopped
-    depends_on:
-      - mariadb
-      - redis
-      - wordpress
-      - adminer
-      - ftp
-      - static-site
-      - nginx
     networks:
       - inception
 
+# ==================== NETWORK ====================
 networks:
   inception:
     driver: bridge
 
+# ==================== VOLUMES ====================
 volumes:
   wordpress_data:
     driver: local
@@ -140,6 +146,7 @@ volumes:
       o: bind
       device: ${DATA_ROOT:?Set DATA_ROOT in .env}/mariadb
 
+# ==================== SECRETS ====================
 secrets:
   db_password:
     file: ../secrets/db_password.txt
